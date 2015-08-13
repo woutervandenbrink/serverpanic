@@ -67,7 +67,7 @@
                          * and determines mean used memory  percentage. If this is greater than 80
                          * it returns false, else it returns true
                          * 
-                         * @return boolean true | false true if mean memory use percentage is greater than 80
+                         * @return boolean true | false false if mean memory use percentage is greater than 80, else true
                          */
                         public function getMemoryUse(){
                             $dircontentlist=scandir($this->memstatdbdir);
