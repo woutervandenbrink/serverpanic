@@ -16,7 +16,7 @@
                      *
                      * @author Wouter van den Brink <wouter@van-den-brink.net>
                      */
-                    class MemoryRecorder {
+                    class MemoryRecorder extends ServerPokerUtilities{
 
                         protected $memstatdbdir;//directory for memory usage info data files
                         function __construct() {
@@ -31,33 +31,39 @@
                          * @return boolean true | false on success | failure
                          */
                         public function recordMemory(){
-                            //string to perform as linux command line command
-                            $freememquerystring = "free -m | gawk '/Mem:/ {print $2;};/buffers\/cache:/{print \"\$test=array(\\\"used_mb\\\"=>\"$3\",\\\"free_mb\\\"=>\"$4\",\\\"timestamp\\\"=>".time().")\"}'";
-                            //execution of command
-                            if(exec($freememquerystring,$outputarray)){
-                                //print_r($outputarray);
-                                eval($outputarray[1] . ";");//to create array $test from the exec - $outputarray 
-                                //print_r($test,true);
-                                //add item to $test array with item from $outputarray
-                                 $test['total_mb'] = $outputarray[0];
-                                if(isset($test['total_mb'])&&$test['total_mb']!=0){
-                                        $test['percent']= 100*($test['free_mb']/$test['total_mb']);
-                                }
-                                
-                               // echo "testarray: ". print_r($test,true);
-                                //%A	A full textual representation of the day	Sunday through Saturday
-                                //%H	Two digit representation of the hour in 24-hour format	00 through 23
-                                //echo __DIR__.'/../memstatdb/'. strftime ( '%A_%H',time()) .      'freememstat.php';
-                                if(file_put_contents(  __DIR__.'/../memstatdb/'. strftime ( '%A_%H',time()) .      'freememstat.php',serialize($test))) {
-                                    //todo: change owner and group to www-data: tis in case of cronjob: or run cronjob for www-data
-                                    return true;
-                                
-                                }else {
-                                    return false;
-                                    
-                                };
+                            if($this->command_exist('free')){//see if command free is present on server
+                               $gawkcommand = $this->testGawk();//should contain 'awk', 'gawk' of false
+                                //string to perform as linux command line command
+                                $freememquerystring = "free -m | $gawkcommand '/Mem:/ {print $2;};/buffers\/cache:/{print \"\$test=array(\\\"used_mb\\\"=>\"$3\",\\\"free_mb\\\"=>\"$4\",\\\"timestamp\\\"=>".time().")\"}'";
+                                //execution of command
+                                if($freememquerystring && exec($freememquerystring,$outputarray)){
+                                    //print_r($outputarray);
+                                    eval($outputarray[1] . ";");//to create array $test from the exec - $outputarray 
+                                    //print_r($test,true);
+                                    //add item to $test array with item from $outputarray
+                                     $test['total_mb'] = $outputarray[0];
+                                    if(isset($test['total_mb'])&&$test['total_mb']!=0){
+                                            $test['percent']= 100*($test['free_mb']/$test['total_mb']);
+                                    }
+
+                                   // echo "testarray: ". print_r($test,true);
+                                    //%A	A full textual representation of the day	Sunday through Saturday
+                                    //%H	Two digit representation of the hour in 24-hour format	00 through 23
+                                    //echo __DIR__.'/../memstatdb/'. strftime ( '%A_%H',time()) .      'freememstat.php';
+                                    if(file_put_contents(  __DIR__.'/../memstatdb/'. strftime ( '%A_%H',time()) .      'freememstat.php',serialize($test))) {
+                                        //todo: change owner and group to www-data: tis in case of cronjob: or run cronjob for www-data
+                                        return true;
+
+                                    }else {
+                                        return false;
+
+                                    };
+
+                                }else{return false;}//how to improve test?: isset($outputarray) perhaps?
+                            }else{
+                                return false;
+                            }
                             
-                            }else{return false;}//how to improve test?: isset($outputarray) perhaps?
                         }
                         
                         /**
