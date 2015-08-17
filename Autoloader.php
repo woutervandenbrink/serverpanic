@@ -64,7 +64,7 @@ class Autoloader {
                 return true;
             }
          }
-      }else{echo 'false';}
+      }else{return false;}
         
     }
 }
